@@ -3,6 +3,15 @@
 This project shows how you can install **the OpenShift Container Platform on Redhat Virtualization** fully automated with **ansible**. The requriments for this to work are a working dhcp server and pre populated DNS names. 
 
 
+# Pre Requirements
+Pre Requirements:
+- You need to have a working dhcp server
+- You need to have a working pre populated DNS
+- You need a golden template for the deployment
+- You need to install the following rpms for the openshift deployment: openshift-ansible-3.7.14-1.git.0.4b35b2d.el7.noarch, openshift-ansible-playbooks-3.7.14-1.git.0.4b35b2d.el7.noarch
+
+
+
 # group_vars and vault
 
 Before you can kickoff the install you will have to make sure that you change the key variables for your own environment. You will have to change the following in groups_vars/all/vars and vault: 
