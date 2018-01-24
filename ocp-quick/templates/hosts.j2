@@ -1,0 +1,65 @@
+# Create an OSEv3 group that contains the masters and nodes groups
+[OSEv3:children]
+masters
+nodes
+etcd
+{% if groups['lb'] is defined %} lb
+{% endif %}
+
+# Set variables common for all OSEv3 hosts
+[OSEv3:vars]
+# SSH user, this user should allow ssh based auth without requiring a password
+ansible_ssh_user={{ ssh_user }}
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+# If ansible_ssh_user is not root, ansible_become must be set to true
+ansible_become=true
+openshift_master_default_subdomain=apps.local.redhat-demo.com
+
+openshift_deployment_type=openshift-enterprise
+
+# uncomment the following to enable htpasswd authentication; defaults to DenyAllPasswordIdentityProvider
+openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
+
+{% if groups['lb'] is defined %}  
+{% for h in groups['lb'] %}
+openshift_master_cluster_method=native
+openshift_master_cluster_hostname={{ hostvars[h].fqdn }}
+openshift_master_cluster_public_hostname={{ hostvars[h].fqdn }}
+{% endfor %}
+{% endif %}
+
+[etcd]
+{% for h in groups['master'] %}
+{{ hostvars[h].fqdn }} 
+{% endfor %}
+
+# host group for masters
+{% if groups['lb'] is defined %}  
+[lb]
+{% for h in groups['lb'] %}
+{{ hostvars[h].fqdn }} 
+{% endfor %}
+{% endif %}
+
+[masters]
+{% for h in groups['master'] %}
+{{ hostvars[h].fqdn }} 
+{% endfor %}
+
+# host group for nodes, includes region info
+[nodes]
+
+{% for h in groups['master'] %}
+{{ hostvars[h].fqdn }} 
+{% endfor %}
+
+{% for h in groups['infranode'] %}
+{{ hostvars[h].fqdn }} openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+{% endfor %}
+
+{% if groups['appnode'] is defined %}
+{% for h in groups['appnode'] %}
+{{ hostvars[h].fqdn }} openshift_node_labels="{'region': 'primary', 'zone': 'west'}"
+{% endfor %}
+{% endif %}

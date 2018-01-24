@@ -1,0 +1,73 @@
+apiVersion: v1
+data:
+  broker-config: |
+    registry:
+      - type: "dockerhub"
+        name: "dh"
+        url: "https://registry.hub.docker.com"
+        org: "ansibleplaybookbundle"
+        tag: "latest"
+        white_list:
+          - ".*-apb$"
+      - type: rhcc
+        name: rh
+        url:  registry.access.redhat.com
+        org:
+        tag: v3.7
+        white_list: [.*-apb$]
+      - type: local_openshift
+        name: localregistry
+        namespaces: ['openshift'] 
+        white_list: [.*-apb$]
+      - type: openshift
+        name: isv-registry
+        user: ldomb@redhat.com
+        pass: Sm151bm1
+        url: http://registry.connect.redhat.com
+        images:
+          - rocketchat/rocketchat-apb
+          - rocketchat/rocketchat
+        white_list:
+          - ".*-apb$"
+    dao:
+      etcd_host: asb-etcd.openshift-ansible-service-broker.svc
+      etcd_port: 2379
+      etcd_ca_file: /var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt
+      etcd_client_cert: /var/run/asb-etcd-auth/client.crt
+      etcd_client_key: /var/run/asb-etcd-auth/client.key
+    log:
+      stdout: true
+      level: info
+      color: true
+    openshift:
+      host: ""
+      ca_file: ""
+      bearer_token_file: ""
+      image_pull_policy: "IfNotPresent"
+      sandbox_role: "edit"
+      keep_namespace: false
+      keep_namespace_on_error: true
+    broker:
+      dev_broker: false
+      bootstrap_on_startup: true
+      refresh_interval: "600s"
+      launch_apb_on_bind: false
+      output_request: false
+      recovery: true
+      ssl_cert_key: /etc/tls/private/tls.key
+      ssl_cert: /etc/tls/private/tls.crt
+      auto_escalate: false
+      auth:
+        - type: basic
+          enabled: false
+kind: ConfigMap
+metadata:
+  creationTimestamp: '2018-01-22T22:37:20Z'
+  labels:
+    app: openshift-ansible-service-broker
+  name: broker-config
+  namespace: openshift-ansible-service-broker
+  resourceVersion: '13020'
+  selfLink: /api/v1/namespaces/openshift-ansible-service-broker/configmaps/broker-config
+  uid: ceced136-ffc4-11e7-bbc7-001a4a160121
+

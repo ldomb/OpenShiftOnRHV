@@ -1,0 +1,35 @@
+---
+### for this do work you need to install python-enum34-1.0.4-5.fc24.noarch and  python-ovirt-engine-sdk4-4.1.0-1.fc24.x86_64 
+- hosts: localhost
+  tasks:
+    - block:
+      - name: Obtain SSO token with using username/password credentials
+        ovirt_auth:
+          url: https://engine1.local.redhat-demo.com/ovirt-engine/api
+          username: admin@internal
+          password: "redhat"
+          insecure: true
+
+      - name: start or stop vms    
+        ovirt_vms:
+          auth: "{{ ovirt_auth }}"
+          state: "{{ state }}"
+          name: "{{ item }}"
+        async: 100
+        poll: 0 
+        with_items:
+          - ocp-master-1
+          - ocp-master-2
+          - ocp-master-3
+          - ocp-infranode-1
+          - ocp-infranode-2
+          - ocp-appnode-1
+          - ocp-appnode-2
+          - ocp-lb-1
+          - ocp-nfs-1
+
+      always:
+        - name: Always revoke the SSO token
+          ovirt_auth:
+            state: absent
+            ovirt_auth: "{{ ovirt_auth }}"

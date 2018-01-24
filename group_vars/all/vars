@@ -1,0 +1,104 @@
+---
+############ node types default config
+type: nfs
+master: false
+appnode: false
+infranode: false
+lb: false
+nfs: false
+
+###########  cloudforms ssh user if executed via cfme
+ssh_user: "{{ vault_ssh_user }}"
+ssh_pass: "{{ vault_cf_ssh_pass }}"
+cf_ssh_pass: "{{ vault_cf_ssh_pass }}"
+cf_db_dev: /dev/sdb
+cfme_hostname: 10.11.164.157
+cfme_username: admin
+cfme_password: "{{ vault_cfme_password }}"
+key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABCCCAQDe+uyKG6qr7Feh7tNQy9tqyOMvK1a0o7JVcOjLI/5XXNlcMuyVINYQNGVxZpkmjeidaroZyH93bz0MuVZwxC8dQ7esf0XPc7+izJ4SEpJnQ0CgOrzLZ9lXhgYeq9uYQcGSrb3dQi4Jt9UuN7zQIdPW9otoAM8HTFFVe2rNJG/pd0R+uWqucgszqzGyNeBykQl6NFv4x0SPu1mxZlqukfwKa7oAhgx4SDDSYcNiEYQsvYDzIDUrAb7bQ74+aE6YB0sNHlM8ax04Z2vTV36Us0x29pNHiSndjQalZ+5z5202f2WwOBHAyzKFDFh0NIq7bsMD1BJV0Z86pF0qsBceLSCf root@localhost.localdomain"
+
+########### vars which need to be existant
+master1: 
+node1:
+node2:
+netmask:
+gateway:
+domain:
+dns:
+
+########### RHV SPECIFIC VARS
+db_size: 20
+db_vol_name: docker_vol
+template_name: rhel74t
+datastore: data
+cluster: Default
+rhvm_addr: "{{ vault_rhvm_addr }}"
+rhv_user: "{{ vault_rhv_user }}"
+rhv_pass: "{{ vault_rhv_pass }}"
+network_name: ovirtmgmt
+
+########### rhsm subscription vars
+rhn_user: "{{ vault_rhn_user }}"
+rhn_pass: "{{ vault_rhn_pass }}"
+rhn_pool: 8a85f98660c23a480160c2fa572d302b
+
+########## if you have an ipa you can use these vars
+ipa_username: ldomb	
+ipa_password: Redhat1!
+ipa_hostname: idm1.demo.rdu.salab.redhat.com
+
+############# OSEv3 VARS
+ansible_become: true
+openshift_master_default_subdomain: apps.local.redhat-demo.com
+
+openshift_deployment_type: openshift-enterprise
+
+openshift_master_identity_providers: [{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
+openshift_master_htpasswd_users: {'alice': '$apr1$M7lczGiE$iExwywOefcsN/8I3ua7Cr.', 'bob': '$apr1$M7lczGiE$iExwywOefcsN/8I3ua7Cr.', 'admin': '$apr1$M7lczGiE$iExwywOefcsN/8I3ua7Cr.'}
+
+######## for metrics
+#openshift_metrics_install_metrics=true
+#openshift_metrics_storage_kind=nfs
+#openshift_metrics_storage_access_modes=['ReadWriteOnce']
+#openshift_metrics_storage_nfs_directory=/exports
+#openshift_metrics_storage_nfs_options='*(rw,root_squash)'
+#openshift_metrics_storage_volume_name=metrics
+#openshift_metrics_storage_volume_size=10Gi
+
+######### for cluster logging
+#openshift_logging_install_logging=true
+#openshift_logging_storage_kind=nfs
+#openshift_logging_storage_access_modes=['ReadWriteOnce']
+#openshift_logging_storage_nfs_directory=/exports
+#openshift_logging_storage_nfs_options='*(rw,root_squash)'
+#openshift_logging_storage_volume_name=logging
+#openshift_logging_storage_volume_size=10Gi
+
+
+########## for nfs backed registry
+openshift_hosted_registry_storage_kind: nfs
+openshift_hosted_registry_storage_access_modes: ['ReadWriteMany']
+openshift_hosted_registry_storage_nfs_directory: /exports
+openshift_hosted_registry_storage_nfs_options: '*(rw,root_squash)'
+openshift_hosted_registry_storage_volume_name: registry
+openshift_hosted_registry_storage_volume_size: 10Gi
+
+########## if lb is enabled set the below
+openshift_master_cluster_method: native
+openshift_master_cluster_hostname: "{{ hostvars[groups['lb'][0]]['fqdn'] }}"
+openshift_master_cluster_public_hostname: "{{ hostvars[groups['lb'][0]]['fqdn'] }}"
+
+
+########## if service broker is enabled
+openshift_hosted_etcd_storage_kind: nfs
+openshift_hosted_etcd_storage_nfs_options: "*(rw,root_squash,sync,no_wdelay)"
+openshift_hosted_etcd_storage_nfs_directory: /exports/osev3-etcd 
+openshift_hosted_etcd_storage_volume_name: etcd-vol2 
+openshift_hosted_etcd_storage_access_modes: ["ReadWriteOnce"]
+openshift_hosted_etcd_storage_volume_size: 1G
+openshift_hosted_etcd_storage_labels: {'storage': 'etcd'}
+ansible_service_broker_image_prefix: openshift3/
+ansible_service_broker_image_tag: "latest"
+ansible_service_broker_registry_url: "registry.access.redhat.com"
+ansible_service_broker_local_registry_whitelist: ['.*-apb$']
+openshift_template_service_broker_namespaces: ['openshift']

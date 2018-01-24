@@ -1,0 +1,4 @@
+---
+openshift_master_cluster_method: native
+openshift_master_cluster_hostname: "{{ hostvars[groups['lb'][0]]['fqdn'] }}"
+openshift_master_cluster_public_hostname: "{{ hostvars[groups['lb'][0]]['fqdn'] }}"

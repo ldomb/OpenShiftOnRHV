@@ -1,0 +1,146 @@
+---
+# tasks file for jritenour.vmware-cf-miq
+ - name: Authenticate to RHV-M
+   ovirt_auth:
+     url: "https://{{ rhvm_addr }}/ovirt-engine/api"
+     username: "{{ rhv_user }}"
+     password: "{{ rhv_pass }}" 
+     insecure: true
+
+ - name: create the VM {{ vm_name }}
+   ovirt_vms: 
+     auth: "{{ ovirt_auth }}"
+     state: running
+     name: "{{ vm_name }}-{{ item }}"
+     cluster: "{{ cluster }}"
+     memory: 16GiB
+     cpu_sockets: 2
+     wait: True
+     template: "{{ template_name }}"
+     nics:
+       - name: nic1
+         profile_name: "{{ network_name }}"
+         interface: virtio 
+     cloud_init:
+       host_name: "{{ vm_name }}-{{ item }}"
+       dns_servers: "{{ dns }}"
+       custom_script: |
+         runcmd:
+          - systemctl stop firewalld
+          - systemctl disable firewalld
+#         write_files:
+#          - content: |
+#              DEVICE=eth0
+#              IPADDR="{{ ipaddr }}"
+#              NETMASK="{{ netmask }}"
+#              ONBOOT=yes
+#              TYPE=Ethernet
+#              USERCTL=no
+#              NM_CONTROLLED=no
+#              GATEWAY="{{ gateway }}"
+#              DNS1="{{ dns }}"
+#              DOMAIN="home.lab"
+#            path: /etc/sysconfig/network-scripts/ifcfg-eth0
+   register: vms
+   with_sequence:
+     count={{ count }}
+   when: createvm
+
+ - name: create the docker disk for {{ vm_name }}
+   ovirt_disks: 
+     auth: "{{ ovirt_auth }}"
+     name: "{{ vm_name }}-{{ item }}-disk2"
+     interface: virtio_scsi
+     vm_name: "{{ vm_name }}-{{ item }}"
+     size: "{{ db_size }}GiB"
+     format: cow
+     storage_domain: "{{ datastore }}" 
+   when: createvm
+   with_sequence:
+     count={{ count }}
+
+ - name: pause 15
+   pause:
+     seconds: 15
+   when: createvm
+
+ - name: facts
+   ovirt_vms_facts:
+     auth: "{{ ovirt_auth }}"
+     pattern: name={{ vm_name }}-* 
+   when: createvm
+ - debug:
+     var: ovirt_vms     
+
+ - name: add master server to inventory
+   add_host:
+     hostname: "{{ item.fqdn }}"
+     ansible_ssh_user: root
+     ansible_ssh_pass: "{{ cf_ssh_pass }}"
+     fqdn: "{{ item.fqdn }}"
+     groups: masters
+   with_items: "{{ ovirt_vms }}"
+   when: master and createvm
+
+ - name: add etcd server to inventory
+   add_host:
+     hostname: "{{ item.fqdn }}"
+     ansible_ssh_user: root
+     ansible_ssh_pass: "{{ cf_ssh_pass }}"
+     fqdn: "{{ item.fqdn }}"
+     groups: etcd
+   with_items: "{{ ovirt_vms }}"
+   when: master and createvm
+
+ - name: add master as node server to inventory
+   add_host:
+     hostname: "{{ item.fqdn }}"
+     ansible_ssh_user: root
+     ansible_ssh_pass: "{{ cf_ssh_pass }}"
+     fqdn: "{{ item.fqdn }}"
+     groups: nodes
+   with_items: "{{ ovirt_vms }}"
+   when: master and createvm
+
+ - name: add infranodes to inventory
+   add_host:
+     hostname: "{{ item.fqdn }}"
+     ansible_ssh_user: root
+     ansible_ssh_pass: "{{ cf_ssh_pass }}"
+     fqdn: "{{ item.fqdn }}"
+     groups: nodes
+     openshift_node_labels: "{'region': 'infra', 'zone': 'default'}"
+   with_items: "{{ ovirt_vms }}"
+   when: infranode and createvm
+
+ - name: add appnodes to inventory
+   add_host:
+     hostname: "{{ item.fqdn }}"
+     ansible_ssh_user: root
+     ansible_ssh_pass: "{{ cf_ssh_pass }}"
+     fqdn: "{{ item.fqdn }}"
+     groups: nodes
+     openshift_node_labels: "{'region': 'primary', 'zone': 'west'}"
+   with_items: "{{ ovirt_vms }}"
+   when: appnode and createvm
+
+ - name: add lb to inventory
+   add_host:
+     hostname: "{{ item.fqdn }}"
+     ansible_ssh_user: root
+     ansible_ssh_pass: "{{ cf_ssh_pass }}"
+     fqdn: "{{ item.fqdn }}"
+     group: lb
+   with_items: "{{ ovirt_vms }}"
+   when: lb and createvm
+
+ - name: add nfs to inventory
+   add_host:
+     hostname: "{{ item.fqdn }}"
+     ansible_ssh_user: root
+     ansible_ssh_pass: "{{ cf_ssh_pass }}"
+     fqdn: "{{ item.fqdn }}"
+     group: nfs
+   with_items: "{{ ovirt_vms }}"
+   when: nfs and createvm
+

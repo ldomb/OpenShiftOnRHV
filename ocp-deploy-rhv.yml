@@ -1,0 +1,80 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  user: root
+  vars:
+    vm_name: ocp-master
+    type: master
+    master: true
+    ipaddr: "{{ master1 }}"
+    count: 3
+    createvm: true
+  roles:
+    - {role: 'ocp-rhv'}
+#    - { role: manageiq, when: manageiq is defined }
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  remote_user: root
+  vars:
+    vm_name: ocp-infranode
+    type: infranode
+    infranode: true
+    ipaddr: "{{ node1 }}"
+    count: 2
+    createvm: true
+  roles:
+    - {role: 'ocp-rhv'}
+#    - { role: manageiq, when: manageiq is defined }
+    
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  remote_user: root
+  vars:
+    vm_name: ocp-appnode
+    type: appnode
+    appnode: true
+    ipaddr: "{{ node1 }}"
+    count: 2
+    createvm: true
+  roles:
+    - {role: 'ocp-rhv'}
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  remote_user: root
+  vars:
+    vm_name: ocp-lb
+    type: lb
+    lb: true
+    ipaddr: "{{ node1 }}"
+    count: 1
+    createvm: true
+  roles:
+    - {role: 'ocp-rhv'}
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  remote_user: root
+  vars:
+    vm_name: ocp-nfs
+    type: nfs
+    nfs: true
+    ipaddr: "{{ node1 }}"
+    count: 1
+    createvm: true
+  roles:
+    - {role: 'ocp-rhv'}
+
+- hosts: masters:nodes:lb:nfs
+  remote_user: root
+  roles:
+    - {role: 'ocp-quick'}
+
+- import_playbook: /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml

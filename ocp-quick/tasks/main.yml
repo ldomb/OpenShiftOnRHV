@@ -1,0 +1,134 @@
+---
+  - name: include OCPv3
+    include_vars:
+      file: group_vars/all/vars
+
+  - name: include lb
+    include_vars:
+      file: group_vars/all/lb
+    when: lb
+    #when: inventory_hostname == groups["lb"][0]
+
+  - name: add key to authorized keys
+    authorized_key: 
+      user: "{{ ssh_user }}"
+      state: present
+      key: "{{ key }}"
+
+  - name: "RHN | registering system with RHN"
+    redhat_subscription:
+      state: "present"
+      username: "{{ rhn_user }}"
+      password: "{{ rhn_pass }}"
+      pool: "{{ rhn_pool }}"
+
+  - name: Disable all repos
+    shell: subscription-manager repos --disable "*"
+
+#  - name: echo idm
+#    lineinfile:
+#      path: /etc/hosts
+#      line: '10.11.165.151 idm1.demo.rdu.salab.redhat.com idm1'
+
+#  - name: Generate IPA Session Cookie
+#    uri:
+#      url: "https://{{ ipa_hostname }}/ipa/session/login_password"
+#      validate_certs: no
+#      method: POST
+#      status_code: 200
+#      headers:
+#        Content-Type: "application/x-www-form-urlencoded"
+#        Accept: "text/plain"
+#        Referer: "https://{{ ipa_hostname }}/ipa"
+#      body: "user={{ ipa_username }}&password={{ ipa_password }}"
+#    register: session
+
+#  - debug: var=session
+#    when: debug is defined
+
+#  - name: Add Host from IPA & Update DNS
+#    uri:
+#      url: "https://{{ ipa_hostname }}/ipa/session/json"
+#      validate_certs: no
+#      method: POST
+#      status_code: 200
+#      headers:
+#        Cookie: "{{ session.set_cookie }}"
+#        Accept: "application/json"
+#        Referer: "https://{{ ipa_hostname }}/ipa"
+#      body:
+#        method: dnsrecord_add
+#        params:
+#        - - demo.rdu.salab.redhat.com.
+#          - "*.apps{{ hostvars[groups['node'][0]]['uuidnode'] }}"
+#        - a_part_ip_address: "{{ hostvars[groups['node'][0]]['ansible_default_ipv4']['address'] }}"
+#      body_format: json
+#    register: wildcard_dns_add
+#    when: "'master' in group_names"
+#
+#  - debug: var=wildcard_dns_add
+#    when: debug is defined
+
+  - name: Enable necessary repos
+    command: subscription-manager repos --enable="rhel-7-server-rpms"     --enable="rhel-7-server-extras-rpms"     --enable="rhel-7-server-ose-3.7-rpms"     --enable="rhel-7-fast-datapath-rpms"
+    register: subs
+    until: subs.rc == 0
+    retries: 3
+    delay: 15
+    ignore_errors: yes
+
+
+  - name: Install necessary packages
+    yum:  
+      name: '{{ item }}'
+      state: present
+    with_items: 
+    - wget 
+    - git 
+    - net-tools 
+    - bind-utils 
+    - iptables-services 
+    - bridge-utils 
+    - bash-completion 
+    - kexec-tools 
+    - sos 
+    - psacct
+    - atomic-openshift-utils
+    - docker-1.12.6
+    - ipa-client
+    - httpd-tools
+    - strace
+
+#  - name: configure IPA client
+#    command: ipa-client-install --server='{{ ipa_server }}' --domain='{{ domain }}' --hostname='{{ ansible_hostname }}'.'{{ domain }}' --principal='{{ ipa_user }}' --password='{{ ipa_password }}' --enable-dns-updates --unattended
+
+  - name: configure docker storage
+    template:
+      src: docker-storage-setup.j2
+      dest: /etc/sysconfig/docker-storage-setup
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: run docker storage setup
+    command: docker-storage-setup
+
+  - name: start and enable Docker
+    service:
+      name: docker
+      state: started
+      enabled: true
+
+# Play below verified to work - commenting out until ready to integrate into main playbook
+#  - name: add DNS Wildcard record pointed to infra node(s)
+#    nsupdate:
+#      key_name: "{{ dns_keyname }}"
+#      key_secret: "{{ dns_key }}"
+#      key_algorithm: "{{ dns_algorith }}"
+#      server: "{{ dns_server }}"
+#      zone: "{{ domain }}"
+#      record: "{{ ansible_hostname }}"
+#      value: "{{ hostvars[groups['node'][1]]['ansible_default_ipv4']['address'] }}"
+#
+#
+
