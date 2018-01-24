@@ -8,7 +8,7 @@ Pre Requirements:
 - You need to have a working dhcp server
 - You need to have a working pre populated DNS
 - You need a golden template for the deployment
-- You need to install the following rpms for the openshift deployment: openshift-ansible-3.7.14-1.git.0.4b35b2d.el7.noarch, openshift-ansible-playbooks-3.7.14-1.git.0.4b35b2d.el7.noarch
+- You need to install the following rpms on your ansible control host for the openshift deployment: openshift-ansible-3.7.14-1.git.0.4b35b2d.el7.noarch, openshift-ansible-playbooks-3.7.14-1.git.0.4b35b2d.el7.noarch
 
 
 
