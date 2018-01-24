@@ -43,7 +43,7 @@ hosts: localhost<br>
   &nbsp;&nbsp;roles: <br>
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- {role: 'ocp-rhv'} <br>
 
-## Important ... If you don't buld a HA install you won't need the LB settings
+## Important ... If you don't build an HA install you won't need the LB settings
 openshift_master_cluster_method: native <br>
 openshift_master_cluster_hostname: "{{ hostvars[groups['lb'][0]]['fqdn'] }}" <br>
 openshift_master_cluster_public_hostname: "{{ hostvars[groups['lb'][0]]['fqdn'] }}" <br>
